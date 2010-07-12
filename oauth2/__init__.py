@@ -86,6 +86,13 @@ def escape(s):
     return urllib.quote(s, safe='~')
 
 
+def _utf8_str(s):
+  if isinstance(s, unicode):
+      return s.encode('utf-8')
+  else:
+      return str(s)
+
+
 def generate_timestamp():
     """Get seconds since epoch (UTC)."""
     return int(time.time())
@@ -310,7 +317,7 @@ class Request(dict):
         """Serialize as a header for an HTTPAuth request."""
         oauth_params = ((k, v) for k, v in self.items() 
                             if k.startswith('oauth_'))
-        stringy_params = ((k, escape(str(v))) for k, v in oauth_params)
+        stringy_params = ((k, escape(_utf8_str(v))) for k, v in oauth_params)
         header_params = ('%s="%s"' % (k, v) for k, v in stringy_params)
         params_header = ', '.join(header_params)
  
@@ -384,6 +391,7 @@ class Request(dict):
         non_oauth_url_items = list([(k, v) for k, v in url_items  if not k.startswith('oauth_')])
         items.extend(non_oauth_url_items)
 
+        items = [(_utf8_str(k), _utf8_str(v)) for k, v in items]
         encoded_str = urllib.urlencode(sorted(items))
         # Encode signature parameters per Oauth Core 1.0 protocol
         # spec draft 7, section 3.6
